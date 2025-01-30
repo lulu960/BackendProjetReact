@@ -72,5 +72,22 @@ router.get("/likes", auth, async (req, res) => {
     }
 });
 
+router.get("/users/swipe", auth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        // Exclure l'utilisateur actuel et ceux déjà likés ou matchés
+        const users = await User.find({
+            _id: { $ne: userId },
+            likedUsers: { $nin: [userId] },
+            matches: { $nin: [userId] },
+        }).limit(10);
+
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+});
+
 
 module.exports = router;
