@@ -25,25 +25,26 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/match", require("./routes/match"));
 app.use("/api/chat", require("./routes/chat"));
 
-// Stocker les utilisateurs connectés
+// Stocker les utilisateurs connectés (clé = userId, valeur = socket.id)
 let connectedUsers = {};
 
 io.on("connection", (socket) => {
     console.log(`🟢 Utilisateur connecté : ${socket.id}`);
 
-    // Associer l'utilisateur au socket
+    // Associer un userId à un socket lorsqu'il se connecte
     socket.on("userConnected", (userId) => {
         connectedUsers[userId] = socket.id;
-        console.log(`👤 Utilisateur ${userId} connecté avec le socket ${socket.id}`);
+        console.log(`👤 Utilisateur ${userId} est en ligne.`);
     });
 
-    // Envoyer un message à tous les utilisateurs (broadcast)
+    // Envoyer un message uniquement aux utilisateurs qui ont matché
     socket.on("sendMessage", async (data) => {
         const { sender, receiver, message } = data;
 
         // Vérifier si les utilisateurs ont matché
         const senderUser = await User.findById(sender);
         if (!senderUser || !senderUser.matches.includes(receiver)) {
+            console.log(`❌ Impossible d'envoyer le message : ${sender} et ${receiver} ne sont pas matchés.`);
             return;
         }
 
@@ -51,29 +52,29 @@ io.on("connection", (socket) => {
         const newMessage = new Message({ sender, receiver, message });
         await newMessage.save();
 
-        // Envoyer le message à TOUS les utilisateurs connectés
-        io.emit("broadcastMessage", newMessage);
+        // Vérifier si le destinataire est en ligne
+        if (connectedUsers[receiver]) {
+            io.to(connectedUsers[receiver]).emit("receiveMessage", newMessage);
+            console.log(`📩 Message envoyé à ${receiver}`);
+        }
 
-        console.log(`📩 Message envoyé de ${sender} à ${receiver}: ${message}`);
+        // Toujours envoyer une copie du message à l'expéditeur
+        io.to(socket.id).emit("receiveMessage", newMessage);
     });
 
     // Gérer la déconnexion des utilisateurs
     socket.on("disconnect", () => {
         console.log(`🔴 Utilisateur déconnecté : ${socket.id}`);
 
-        // Retirer l'utilisateur de la liste
+        // Retirer l'utilisateur de la liste des connectés
         Object.keys(connectedUsers).forEach(userId => {
             if (connectedUsers[userId] === socket.id) {
+                console.log(`👤 Utilisateur ${userId} est hors ligne.`);
                 delete connectedUsers[userId];
             }
         });
     });
 });
 
-app.use((req, res, next) => {
-    res.setHeader("Content-Security-Policy", "connect-src 'self' ws://localhost:5000;");
-    next();
-});
-
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`🚀 Serveur WebSocket actif sur ws://localhost:${PORT}`));
