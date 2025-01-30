@@ -1,0 +1,16 @@
+- [D] Implémenter l'authentification des utilisateurs
+- [B] Ajouter la fonctionnalité de swipe pour les profils
+- [D] Intégrer l'API pour récupérer les profils des utilisateurs
+- [TD] Mettre en place la messagerie instantanée
+- [TD] Créer une page de profil utilisateur
+- [B] Ajouter la fonctionnalité de match
+- [TD] Implémenter les notifications push
+- [?] Ajouter la gestion des paramètres utilisateur
+
+<============================>
+
+Lexique :
+
+[D] = Done
+[B] = Bug
+[TD] = Too Do
