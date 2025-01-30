@@ -27,6 +27,7 @@ function Home() {
         const userId = profiles[currentIndex]._id;
         try {
           const token = localStorage.getItem('token');
+          //TO DO => bug avec les match envoie deux fois l'id utilisteurs dans la base de donné colonne "matches"
           await axios.post(`http://localhost:3000/api/match/like/${userId}`, {}, {
             headers: { Authorization: `${token}` }
           });
